@@ -39,8 +39,17 @@ class Episode(object):
         #  Try to implement it in O(n) runtime, where n is the number of
         #  states. Hint: change the order.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
+        curr_factor = gamma
+        # we need to reverse the order, as the last state only gets it's own value, as each state is worth
+        # the amount of all the values that happen after him
+        curr_experiences = self.experiences.reverse()
+        curr_reward = 0
+        for exp in curr_experiences:
+            curr_reward = curr_reward + exp.reward * curr_factor
+            qvals.append(curr_reward)
+            curr_factor = curr_factor * gamma
         return qvals
 
     def __repr__(self):
@@ -83,8 +92,16 @@ class TrainBatch(object):
         #   - Calculate the q-values for states in each experience.
         #   - Construct a TrainBatch instance.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
+        all_experiences = []
+        curr_reward = 0.0
+        for epi in episodes:
+            curr_exp = epi.experiences
+            # I wanted to use extend this time, as we need only one big list
+            all_experiences.extend(curr_exp)
+            curr_reward = curr_reward + epi.total_reward
+        train_batch = (all_experiences, curr_reward)
         return train_batch
 
     @property
@@ -141,11 +158,26 @@ class TrainBatchDataset(torch.utils.data.IterableDataset):
             #    by the agent.
             #  - Store Episodes in the curr_batch list.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            #raise NotImplementedError()
             # ========================
+
+            # Each episode contains a list of experiences and the total reward
+            curr_experience = agent.step()
+            episode_experiences.append(curr_experience)
+            episode_reward = episode_reward + curr_experience.reward
+            curr_batch = episode_experiences, episode_reward
+
+            # Code they wrote:
             if len(curr_batch) == self.episode_batch_size:
                 yield tuple(curr_batch)
                 curr_batch = []
+                # What I added - not sure we need to do this, but it seems each episode starts from scratch
+                episode_reward = 0.0
+                episode_experiences = []
+
+            # So we don't have an infinite loop
+            if curr_experience.is_done:
+                break
 
     def __iter__(self) -> Iterator[TrainBatch]:
         """

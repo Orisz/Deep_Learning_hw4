@@ -29,14 +29,26 @@ class PolicyNet(nn.Module):
 
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
+
+        self.in_features = in_features
+        self.out_actions  = out_actions
+        self.kw = kw
+
+        self.fc = nn.Sequential(
+            nn.Linear(self.in_features, 512),
+            nn.ReLU(),
+            nn.Linear(512, self.out_actions)
+        )
 
     def forward(self, x):
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
+
+        action_scores = self.fc(x)
         return action_scores
 
     @staticmethod
@@ -50,8 +62,22 @@ class PolicyNet(nn.Module):
         """
         # TODO: Implement according to docstring.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
+        """
+        super(CustomPolicy, self).__init__(*args, **kwargs,
+                                           net_arch=[dict(pi=[128, 128, 128],
+                                                          vf=[128, 128, 128])],
+                                           feature_extraction="mlp")
+        net = None
+        net = env.
+        """
+
+        # Ori - I think here we are supossed to create a new network, according to the dimentions of the env
+        actions = env.action_space
+        rewards = env.reward_range
+        observs = env.observation_space
+        net = PolicyNet(in_features = len(actions), out_actions= len(rewards))
         return net.to(device)
 
 
@@ -87,9 +113,13 @@ class PolicyAgent(object):
         #  Generate the distribution as described above.
         #  Notice that you should use p_net for *inference* only.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        # raise NotImplementedError()
         # ========================
-
+        actions_proba = []
+        net = self.p_net(self.env)
+        for action in self.env.action_space:
+            prob = net(action)
+            actions_proba.append(prob)
         return actions_proba
 
     def step(self) -> Experience:
@@ -109,9 +139,16 @@ class PolicyAgent(object):
         #  - Generate and return a new experience.
         # ====== YOUR CODE: ======
 
-        raise NotImplementedError()
+        #raise NotImplementedError()
 
         # ========================
+        idx = torch.max(self.current_action_distribution())
+        curr_action = self.env.action_space[idx]
+        #self.curr_episode_reward = self.p_net(curr_action)
+        self.curr_state = curr_action # not sure about this
+
+        #how do i know if is_done is true and what is the experience?
+
         if is_done:
             self.reset()
         return experience
@@ -137,8 +174,13 @@ class PolicyAgent(object):
             #  Create an agent and play the environment for one episode
             #  based on the policy encoded in p_net.
             # ====== YOUR CODE: ======
-            raise NotImplementedError()
+            #raise NotImplementedError()
             # ========================
+            while self.curr_state !=
+                action = env.action_space.sample()
+                obs, reward, episode_done, extra_info = env.step(action)
+                total_reward += reward
+                total_steps += 1
         return env, n_steps, reward
 
 
