@@ -39,15 +39,28 @@ class PolicyNet(nn.Module):
         self.fc = nn.Sequential(
             nn.Linear(self.in_features, 512),
             nn.ReLU(),
-            nn.Linear(512, self.out_actions)
+            nn.Linear(512, 128),
+            nn.ReLU(),
+            nn.Linear(128, 64),
+            nn.ReLU(),
+            nn.Linear(64, self.out_actions),
+            nn.ReLU(),
+            nn.Sigmoid()
         )
+        """
+        self.first_layer = nn.Linear(self.in_features, 512),
+        self.sec_layer = nn.Linear(512, 128)
+        self.third_layer = nn.Linear(128, 64)
+        self.forth_layer = nn.Linear(64, self.out_actions)
+        """
+
 
     def forward(self, x):
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
         # raise NotImplementedError()
         # ========================
-
+        # Here we do the forward pass with all the layers from the init
         action_scores = self.fc(x)
         return action_scores
 
@@ -75,9 +88,9 @@ class PolicyNet(nn.Module):
 
         # Ori - I think here we are supossed to create a new network, according to the dimentions of the env
         actions = env.action_space
-        rewards = env.reward_range
-        observs = env.observation_space
-        net = PolicyNet(in_features = len(actions), out_actions= len(rewards))
+        #rewards = env.reward_range
+        #observs = env.observation_space
+        net = PolicyNet(in_features = 8 , out_actions= len(actions))
         return net.to(device)
 
 
@@ -145,12 +158,14 @@ class PolicyAgent(object):
         idx = torch.max(self.current_action_distribution())
         curr_action = self.env.action_space[idx]
         #self.curr_episode_reward = self.p_net(curr_action)
-        self.curr_state = curr_action # not sure about this
-
+        self.curr_state = self.p_net(curr_action) #curr_action # not sure about this
+        self.curr_episode_reward = self.curr_episode_reward + self.curr_state
         #how do i know if is_done is true and what is the experience?
-
+        #this is what I understood from the documentation
+        is_done = True if self.curr_state > 1.0 else False
         if is_done:
             self.reset()
+        experience = Experience(self.curr_state, curr_action, float(self.curr_state), is_done)
         return experience
 
     @classmethod
@@ -176,7 +191,7 @@ class PolicyAgent(object):
             # ====== YOUR CODE: ======
             #raise NotImplementedError()
             # ========================
-            while self.curr_state !=
+            #don't know what to do here
                 action = env.action_space.sample()
                 obs, reward, episode_done, extra_info = env.step(action)
                 total_reward += reward

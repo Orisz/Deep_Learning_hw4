@@ -47,10 +47,10 @@ class Episode(object):
         curr_experiences = self.experiences.reverse()
         curr_reward = 0
         for exp in curr_experiences:
-            curr_reward = curr_reward + exp.reward * curr_factor
+            curr_reward = curr_reward + exp[2] * curr_factor
             qvals.append(curr_reward)
             curr_factor = curr_factor * gamma
-        return qvals
+        return list(reversed(qvals))
 
     def __repr__(self):
         return f'Episode(total_reward={self.total_reward:.2f}, ' \
@@ -94,14 +94,30 @@ class TrainBatch(object):
         # ====== YOUR CODE: ======
         # raise NotImplementedError()
         # ========================
-        all_experiences = []
-        curr_reward = 0.0
+        """We need to update:
+        cls.q_vals
+        cls.actions
+        cls.states
+        cls.total_rewards"""
+        experiences = []
+        states = []
+        actions = []
+        rewards = 0.0
+        q_vals = []
         for epi in episodes:
             curr_exp = epi.experiences
             # I wanted to use extend this time, as we need only one big list
-            all_experiences.extend(curr_exp)
-            curr_reward = curr_reward + epi.total_reward
-        train_batch = (all_experiences, curr_reward)
+            # Some we update in the outer loop and the others in the inner loop
+            # As the actions and states are per experience
+            experiences.extend(curr_exp)
+            rewards = rewards + epi.total_reward
+            q_vals.extend(epi.calc_qvals(gamma))
+            for exp in curr_exp:
+                states.extend(exp[0])
+                actions.extend(exp[1])
+
+        # maybe we need to turn everything into vectors
+        train_batch = TrainBatch(states, actions, q_vals, rewards)
         return train_batch
 
     @property
