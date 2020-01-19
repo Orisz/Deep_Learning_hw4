@@ -13,6 +13,7 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 from torch.utils.data import DataLoader
+from torch.distributions import Categorical
 
 from .rl_data import Experience, Episode, TrainBatch
 
@@ -29,39 +30,26 @@ class PolicyNet(nn.Module):
 
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
-        # ========================
-
-        self.in_features = in_features
-        self.out_actions  = out_actions
-        self.kw = kw
-
+        #raise NotImplementedError()
         self.fc = nn.Sequential(
-            nn.Linear(self.in_features, 512),
+            nn.Linear(in_features, 512),
             nn.ReLU(),
             nn.Linear(512, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(64, self.out_actions),
+            nn.Linear(64, out_actions),
             nn.ReLU(),
-            nn.Sigmoid()
+            nn.Softmax(dim=-1)
         )
-        """
-        self.first_layer = nn.Linear(self.in_features, 512),
-        self.sec_layer = nn.Linear(512, 128)
-        self.third_layer = nn.Linear(128, 64)
-        self.forth_layer = nn.Linear(64, self.out_actions)
-        """
-
+        # ========================
 
     def forward(self, x):
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
-        # ========================
-        # Here we do the forward pass with all the layers from the init
+        #raise NotImplementedError()
         action_scores = self.fc(x)
+        # ========================
         return action_scores
 
     @staticmethod
@@ -75,22 +63,9 @@ class PolicyNet(nn.Module):
         """
         # TODO: Implement according to docstring.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
+        #raise NotImplementedError()
+        net = PolicyNet(env.observation_space.shape[0], env.action_space.n)
         # ========================
-        """
-        super(CustomPolicy, self).__init__(*args, **kwargs,
-                                           net_arch=[dict(pi=[128, 128, 128],
-                                                          vf=[128, 128, 128])],
-                                           feature_extraction="mlp")
-        net = None
-        net = env.
-        """
-
-        # Ori - I think here we are supossed to create a new network, according to the dimentions of the env
-        actions = env.action_space
-        #rewards = env.reward_range
-        #observs = env.observation_space
-        net = PolicyNet(in_features = 8 , out_actions= len(actions))
         return net.to(device)
 
 
@@ -126,13 +101,13 @@ class PolicyAgent(object):
         #  Generate the distribution as described above.
         #  Notice that you should use p_net for *inference* only.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
+        #raise NotImplementedError()
+        if self.curr_state is None:
+            self.reset()
+        with torch.no_grad():
+            actions_proba = self.p_net(self.curr_state)
         # ========================
-        actions_proba = []
-        net = self.p_net(self.env)
-        for action in self.env.action_space:
-            prob = net(action)
-            actions_proba.append(prob)
+
         return actions_proba
 
     def step(self) -> Experience:
@@ -153,19 +128,21 @@ class PolicyAgent(object):
         # ====== YOUR CODE: ======
 
         #raise NotImplementedError()
-
+        q_s = self.current_action_distribution()
+        m = Categorical(q_s)
+        action = m.sample()
+        action = int(action.item())
+        # Perform the selected action on the environment to get a reward and a new observation.
+        next_state, reward, is_done, _ = self.env.step(action)
+        next_state = torch.tensor(next_state, device=self.device)
+        #accumalte reward of the entire episode
+        self.curr_episode_reward += reward
+        # Save cur state
+        self.curr_state = next_state
+        experience = Experience(next_state, action, reward, is_done)
         # ========================
-        idx = torch.max(self.current_action_distribution())
-        curr_action = self.env.action_space[idx]
-        #self.curr_episode_reward = self.p_net(curr_action)
-        self.curr_state = self.p_net(curr_action) #curr_action # not sure about this
-        self.curr_episode_reward = self.curr_episode_reward + self.curr_state
-        #how do i know if is_done is true and what is the experience?
-        #this is what I understood from the documentation
-        is_done = True if self.curr_state > 1.0 else False
         if is_done:
             self.reset()
-        experience = Experience(self.curr_state, curr_action, float(self.curr_state), is_done)
         return experience
 
     @classmethod
@@ -190,12 +167,14 @@ class PolicyAgent(object):
             #  based on the policy encoded in p_net.
             # ====== YOUR CODE: ======
             #raise NotImplementedError()
+            episode_done = False
+            tmpAgent = PolicyAgent(env, p_net, device)
+            while not episode_done:
+                exp = tmpAgent.step()
+                episode_done = exp.is_done
+                reward += exp.reward
+                n_steps += 1
             # ========================
-            #don't know what to do here
-                action = env.action_space.sample()
-                obs, reward, episode_done, extra_info = env.step(action)
-                total_reward += reward
-                total_steps += 1
         return env, n_steps, reward
 
 
