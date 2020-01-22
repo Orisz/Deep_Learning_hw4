@@ -39,18 +39,17 @@ class Episode(object):
         #  Try to implement it in O(n) runtime, where n is the number of
         #  states. Hint: change the order.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
-        # ========================
-        curr_factor = gamma
+        #raise NotImplementedError()
         # we need to reverse the order, as the last state only gets it's own value, as each state is worth
         # the amount of all the values that happen after him
-        curr_experiences = self.experiences.reverse()
-        curr_reward = 0
+        curr_experiences = list(reversed(self.experiences))
+        curr_reward = 0.0
         for exp in curr_experiences:
-            curr_reward = curr_reward + exp[2] * curr_factor
+            curr_reward = curr_reward * gamma + exp.reward
             qvals.append(curr_reward)
-            curr_factor = curr_factor * gamma
-        return list(reversed(qvals))
+        qvals = list(reversed(qvals))
+        # ========================
+        return qvals
 
     def __repr__(self):
         return f'Episode(total_reward={self.total_reward:.2f}, ' \
@@ -63,8 +62,8 @@ class TrainBatch(object):
     """
 
     def __init__(self, states: torch.FloatTensor, actions: torch.LongTensor,
-                 q_vals: torch.LongTensor, total_rewards: torch.FloatTensor):
-
+                 q_vals: torch.FloatTensor, total_rewards: torch.FloatTensor):
+        
         assert states.shape[0] == actions.shape[0] == q_vals.shape[0]
 
         self.states = states
@@ -92,32 +91,23 @@ class TrainBatch(object):
         #   - Calculate the q-values for states in each experience.
         #   - Construct a TrainBatch instance.
         # ====== YOUR CODE: ======
-        # raise NotImplementedError()
-        # ========================
-        """We need to update:
-        cls.q_vals
-        cls.actions
-        cls.states
-        cls.total_rewards"""
-        experiences = []
-        states = []
-        actions = []
-        rewards = 0.0
-        q_vals = []
+        #raise NotImplementedError()
+        states = torch.FloatTensor()
+        actions =  torch.LongTensor()
+        rewards = torch.FloatTensor()
+        q_vals = torch.FloatTensor()
         for epi in episodes:
             curr_exp = epi.experiences
-            # I wanted to use extend this time, as we need only one big list
-            # Some we update in the outer loop and the others in the inner loop
-            # As the actions and states are per experience
-            experiences.extend(curr_exp)
-            rewards = rewards + epi.total_reward
-            q_vals.extend(epi.calc_qvals(gamma))
+            rewards = torch.cat((rewards, torch.FloatTensor([epi.total_reward,])), dim=0) 
+            q_vals = torch.cat((q_vals, torch.FloatTensor(epi.calc_qvals(gamma))), dim=0)
             for exp in curr_exp:
-                states.extend(exp[0])
-                actions.extend(exp[1])
+                row_tensor_state = torch.unsqueeze(torch.FloatTensor(exp.state),dim=0)
+#                 row_tensor = col_tensor.t()
+                states = torch.cat((states, row_tensor_state), dim=0)
+                actions = torch.cat((actions, torch.LongTensor([exp.action,])), dim=0)
 
-        # maybe we need to turn everything into vectors
-        train_batch = TrainBatch(states, actions, q_vals, rewards)
+        train_batch = TrainBatch(states, actions, q_vals, rewards)        
+        # ========================
         return train_batch
 
     @property
@@ -175,25 +165,23 @@ class TrainBatchDataset(torch.utils.data.IterableDataset):
             #  - Store Episodes in the curr_batch list.
             # ====== YOUR CODE: ======
             #raise NotImplementedError()
+            is_ep_done = False
+            while is_ep_done == False:
+                curr_experience = agent.step()
+                episode_experiences.append(curr_experience)
+                episode_reward += curr_experience.reward
+                is_ep_done = curr_experience.is_done
+            #episode done, save the episodes data:
+            curr_batch.append(Episode(episode_reward, episode_experiences))
+            #reset stats for new episode's data
+            episode_reward = 0.0
+            episode_experiences = []
+#             if curr_experience.is_done == True:
+#                 break
             # ========================
-
-            # Each episode contains a list of experiences and the total reward
-            curr_experience = agent.step()
-            episode_experiences.append(curr_experience)
-            episode_reward = episode_reward + curr_experience.reward
-            curr_batch = episode_experiences, episode_reward
-
-            # Code they wrote:
             if len(curr_batch) == self.episode_batch_size:
                 yield tuple(curr_batch)
                 curr_batch = []
-                # What I added - not sure we need to do this, but it seems each episode starts from scratch
-                episode_reward = 0.0
-                episode_experiences = []
-
-            # So we don't have an infinite loop
-            if curr_experience.is_done:
-                break
 
     def __iter__(self) -> Iterator[TrainBatch]:
         """

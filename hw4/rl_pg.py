@@ -13,7 +13,6 @@ import torch.nn as nn
 import torch.optim as optim
 import tqdm
 from torch.utils.data import DataLoader
-from torch.distributions import Categorical
 
 from .rl_data import Experience, Episode, TrainBatch
 
@@ -31,6 +30,7 @@ class PolicyNet(nn.Module):
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
+        # ========================
         self.fc = nn.Sequential(
             nn.Linear(in_features, 512),
             nn.ReLU(),
@@ -39,17 +39,16 @@ class PolicyNet(nn.Module):
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, out_actions),
-            nn.ReLU(),
-            nn.Softmax(dim=-1)
+            nn.ReLU()
+            #nn.Softmax(dim=-1)
         )
-        # ========================
 
     def forward(self, x):
         # TODO: Implement a simple neural net to approximate the policy.
         # ====== YOUR CODE: ======
-        #raise NotImplementedError()
-        action_scores = self.fc(x)
+        # raise NotImplementedError()
         # ========================
+        action_scores = self.fc(x)
         return action_scores
 
     @staticmethod
@@ -64,8 +63,8 @@ class PolicyNet(nn.Module):
         # TODO: Implement according to docstring.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        net = PolicyNet(env.observation_space.shape[0], env.action_space.n)
         # ========================
+        net = PolicyNet(env.observation_space.shape[0], env.action_space.n)
         return net.to(device)
 
 
@@ -102,11 +101,9 @@ class PolicyAgent(object):
         #  Notice that you should use p_net for *inference* only.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        if self.curr_state is None:
-            self.reset()
-        with torch.no_grad():
-            actions_proba = self.p_net(self.curr_state)
+        actions_proba = torch.softmax(self.p_net(self.curr_state), 0)
         # ========================
+        
 
         return actions_proba
 
@@ -128,14 +125,15 @@ class PolicyAgent(object):
         # ====== YOUR CODE: ======
 
         #raise NotImplementedError()
+
         q_s = self.current_action_distribution()
-        m = Categorical(q_s)
+        m = torch.distributions.Categorical(q_s)
         action = m.sample()
         action = int(action.item())
         # Perform the selected action on the environment to get a reward and a new observation.
         next_state, reward, is_done, _ = self.env.step(action)
         next_state = torch.tensor(next_state, device=self.device)
-        #accumalte reward of the entire episode
+        # accumalte reward of the entire episode
         self.curr_episode_reward += reward
         # Save cur state
         self.curr_state = next_state
@@ -144,7 +142,6 @@ class PolicyAgent(object):
         if is_done:
             self.reset()
         return experience
-
     @classmethod
     def monitor_episode(cls, env_name, p_net,
                         monitor_dir="checkpoints/monitor",
@@ -167,13 +164,15 @@ class PolicyAgent(object):
             #  based on the policy encoded in p_net.
             # ====== YOUR CODE: ======
             #raise NotImplementedError()
+            # ========================
             episode_done = False
-            tmpAgent = PolicyAgent(env, p_net, device)
-            while not episode_done:
-                exp = tmpAgent.step()
-                episode_done = exp.is_done
-                reward += exp.reward
-                n_steps += 1
+            tmpAgent = cls(env, p_net, device)
+            with torch.no_grad():
+                while not episode_done:
+                    exp = tmpAgent.step()
+                    episode_done = exp.is_done
+                    reward += exp.reward
+                    n_steps += 1
             # ========================
         return env, n_steps, reward
 
