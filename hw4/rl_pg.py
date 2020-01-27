@@ -244,7 +244,9 @@ class BaselinePolicyGradientLoss(VanillaPolicyGradientLoss):
         #  Calculate the loss and baseline.
         #  Use the helper methods in this class as before.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        policy_weight, baseline = self._policy_weight(batch)
+        loss_p = self._policy_loss(batch, action_scores, policy_weight - baseline)
         # ========================
         return loss_p, dict(loss_p=loss_p.item(), baseline=baseline.item())
 
@@ -253,7 +255,9 @@ class BaselinePolicyGradientLoss(VanillaPolicyGradientLoss):
         #  Calculate both the policy weight term and the baseline value for
         #  the PG loss with baseline.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        policy_weight = batch.q_vals
+        baseline = torch.mean(policy_weight, dim=-1)
         # ========================
         return policy_weight, baseline
 
@@ -277,7 +281,10 @@ class ActionEntropyLoss(nn.Module):
         max_entropy = None
         # TODO: Compute max_entropy.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        #assume uniform dist for max entropy calc: p_i = 1/n_actions; for all i @ {1,2,...n_actions}
+        p = 1.0 / n_actions
+        max_entropy = -p * n_actions * torch.log(torch.tensor([p,]))
         # ========================
         return max_entropy
 
@@ -303,7 +310,16 @@ class ActionEntropyLoss(nn.Module):
         #   - Use pytorch built-in softmax and log_softmax.
         #   - Calculate loss per experience and average over all of them.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        #implement -(entropy) = sigma(proba_actions*log(proba_actions))
+        N = len(batch)
+        log_proba_actions = torch.log_softmax(action_scores, dim=1)
+        proba_actions = torch.softmax(action_scores, dim=1)
+
+        all_entropys = -1.0 * (proba_actions * log_proba_actions).sum(dim=1)
+        avg_entropy = (1 / N) * all_entropys.sum(dim=0)
+        normalized_avg_entropy = avg_entropy / self.calc_max_entropy(action_scores.shape[1])
+        loss_e = -1.0 * normalized_avg_entropy
         # ========================
 
         loss_e *= self.beta
@@ -442,7 +458,16 @@ class PolicyTrainer(object):
         #   - Backprop.
         #   - Update model parameters.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        self.optimizer.zero_grad()
+        total_loss = torch.tensor([0.0,])
+        action_scores = self.model(batch.states)
+        for loss_fn in self.loss_functions:
+            cur_loss, cur_loss_dict = loss_fn(batch, action_scores)
+            total_loss += cur_loss
+            losses_dict.update(cur_loss_dict)
+        total_loss.backward()    
+        self.optimizer.step()
         # ========================
 
         return total_loss, losses_dict

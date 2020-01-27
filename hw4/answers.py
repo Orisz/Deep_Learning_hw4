@@ -12,15 +12,15 @@ math (delimited with $$).
 
 def part1_pg_hyperparams():
     hp = dict(batch_size=32,
-              gamma=0.99,
-              beta=0.5,
-              learn_rate=1e-3,
+              gamma=0.2,
+              beta=0.1,
+              learn_rate=1e-5,
               eps=1e-8,
               )
     # TODO: Tweak the hyperparameters if needed.
     #  You can also add new ones if you need them for your model's __init__.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    #raise NotImplementedError()
     # ========================
     return hp
 
