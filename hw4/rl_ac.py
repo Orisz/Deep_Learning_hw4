@@ -19,7 +19,13 @@ class AACPolicyNet(nn.Module):
         #  Implement a dual-head neural net to approximate both the
         #  policy and value. You can have a common base part, or not.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        self.fc = nn.Sequential(
+            nn.Linear(in_features, 128),
+            nn.ReLU(),
+        )
+        self.action_layer = nn.Linear(128, out_actions)
+        self.value_layer = nn.Linear(128, 1)
         # ========================
 
     def forward(self, x):
@@ -34,7 +40,10 @@ class AACPolicyNet(nn.Module):
         #  calculate both the action scores (policy) and the value of the
         #  given state.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        features = self.fc(x)
+        action_scores = self.action_layer(features)
+        state_values = self.value_layer(features)
         # ========================
 
         return action_scores, state_values
@@ -49,7 +58,8 @@ class AACPolicyNet(nn.Module):
         """
         # TODO: Implement according to docstring.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        net = AACPolicyNet(env.observation_space.shape[0], env.action_space.n)
         # ========================
         return net.to(device)
 
@@ -59,7 +69,9 @@ class AACPolicyAgent(PolicyAgent):
     def current_action_distribution(self) -> torch.Tensor:
         # TODO: Generate the distribution as described above.
         # ====== YOUR CODE: ======
-        raise NotImplementedError()
+        #raise NotImplementedError()
+        action_scores, _ = self.p_net(self.curr_state)
+        actions_proba = torch.softmax(action_scores, 0)
         # ========================
         return actions_proba
 

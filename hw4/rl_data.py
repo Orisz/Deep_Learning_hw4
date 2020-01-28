@@ -102,6 +102,7 @@ class TrainBatch(object):
             q_vals = torch.cat((q_vals, torch.FloatTensor(epi.calc_qvals(gamma))), dim=0)
             for exp in curr_exp:
                 row_tensor_state = torch.unsqueeze(torch.FloatTensor(exp.state),dim=0)
+#                 rewards = torch.cat((rewards, torch.FloatTensor([exp.reward,])), dim=0) 
 #                 row_tensor = col_tensor.t()
                 states = torch.cat((states, row_tensor_state), dim=0)
                 actions = torch.cat((actions, torch.LongTensor([exp.action,])), dim=0)

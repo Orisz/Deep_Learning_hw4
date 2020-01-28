@@ -32,14 +32,14 @@ class PolicyNet(nn.Module):
         #raise NotImplementedError()
         # ========================
         self.fc = nn.Sequential(
-            nn.Linear(in_features, 512),
-            nn.ReLU(),
-            nn.Linear(512, 128),
+            nn.Linear(in_features, 128),
             nn.ReLU(),
             nn.Linear(128, 64),
             nn.ReLU(),
             nn.Linear(64, out_actions),
-            nn.ReLU()
+#             nn.ReLU(),
+#             nn.Linear(64, out_actions),
+#             nn.ReLU()
             #nn.Softmax(dim=-1)
         )
 

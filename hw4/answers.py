@@ -11,10 +11,10 @@ math (delimited with $$).
 
 
 def part1_pg_hyperparams():
-    hp = dict(batch_size=32,
-              gamma=0.2,
-              beta=0.1,
-              learn_rate=1e-5,
+    hp = dict(batch_size=16,
+              gamma=0.95,
+              beta=0.2,
+              learn_rate=1e-3,
               eps=1e-8,
               )
     # TODO: Tweak the hyperparameters if needed.
@@ -36,7 +36,7 @@ def part1_aac_hyperparams():
     # TODO: Tweak the hyperparameters. You can also add new ones if you need
     #   them for your model implementation.
     # ====== YOUR CODE: ======
-    raise NotImplementedError()
+    #raise NotImplementedError()
     # ========================
     return hp
 
