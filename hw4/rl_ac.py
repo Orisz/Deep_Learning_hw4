@@ -20,12 +20,26 @@ class AACPolicyNet(nn.Module):
         #  policy and value. You can have a common base part, or not.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        self.fc = nn.Sequential(
-            nn.Linear(in_features, 128),
+#         self.fc = nn.Sequential(
+#             nn.Linear(in_features, 16),
+#             nn.ReLU(),
+#         )
+#         self.action_layer = nn.Linear(128, out_actions)
+#         self.value_layer = nn.Linear(128, 1)
+        self.action_layer = nn.Sequential(
+            nn.Linear(in_features, 512),
             nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, out_actions),
         )
-        self.action_layer = nn.Linear(128, out_actions)
-        self.value_layer = nn.Linear(128, 1)
+        self.value_layer = nn.Sequential(
+            nn.Linear(in_features, 512),
+            nn.ReLU(),
+            nn.Linear(512, 256),
+            nn.ReLU(),
+            nn.Linear(256, 1),
+        )
         # ========================
 
     def forward(self, x):
@@ -41,9 +55,9 @@ class AACPolicyNet(nn.Module):
         #  given state.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        features = self.fc(x)
-        action_scores = self.action_layer(features)
-        state_values = self.value_layer(features)
+#         features = self.fc(x)
+        action_scores = self.action_layer(x)
+        state_values = self.value_layer(x)
         # ========================
 
         return action_scores, state_values
@@ -114,8 +128,7 @@ class AACPolicyGradientLoss(VanillaPolicyGradientLoss):
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
         q_vals = batch.q_vals
-#         print(f'q_vals: {q_vals.shape, type(q_vals)},state_values:{state_values.shape,type(state_values)}')
-        advantage = q_vals - state_values.detach_().squeeze()
+        advantage = q_vals - state_values.detach().view(-1)
         # ========================
         return advantage
 
@@ -123,10 +136,12 @@ class AACPolicyGradientLoss(VanillaPolicyGradientLoss):
         # TODO: Calculate the state-value loss.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        N = len(batch)
-        advantage = self._policy_weight(batch, state_values)
-        advantage_square = (advantage**2)
-        loss_v = (1.0 / N) * advantage_square.sum()
+#         N = len(batch)
+#         advantage = self._policy_weight(batch, state_values)
+#         advantage_square = (advantage**2)
+#         loss_v = (1.0 / N) * advantage_square.sum()
+        q_vals = batch.q_vals
+        loss_v = torch.mean((q_vals.detach() - state_values.view(-1))**2, dim=0)
         # ========================
         return loss_v
 

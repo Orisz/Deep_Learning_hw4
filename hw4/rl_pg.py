@@ -284,7 +284,7 @@ class ActionEntropyLoss(nn.Module):
         #raise NotImplementedError()
         #assume uniform dist for max entropy calc: p_i = 1/n_actions; for all i @ {1,2,...n_actions}
         p = 1.0 / n_actions
-        max_entropy = -p * n_actions * torch.log(torch.tensor([p,]))
+        max_entropy = -p * n_actions * torch.log(torch.tensor(p))
         # ========================
         return max_entropy
 
@@ -460,7 +460,7 @@ class PolicyTrainer(object):
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
         self.optimizer.zero_grad()
-        total_loss = torch.tensor([0.0,])
+        total_loss = torch.tensor(0.0)
         action_scores = self.model(batch.states)
         for loss_fn in self.loss_functions:
             cur_loss, cur_loss_dict = loss_fn(batch, action_scores)
