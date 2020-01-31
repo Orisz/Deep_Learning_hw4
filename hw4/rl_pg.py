@@ -32,11 +32,11 @@ class PolicyNet(nn.Module):
         #raise NotImplementedError()
         # ========================
         self.fc = nn.Sequential(
-            nn.Linear(in_features, 128),
+            nn.Linear(in_features, 512),
             nn.ReLU(),
-            nn.Linear(128, 64),
+            nn.Linear(512, 256),
             nn.ReLU(),
-            nn.Linear(64, out_actions),
+            nn.Linear(256, out_actions),
 #             nn.ReLU(),
 #             nn.Linear(64, out_actions),
 #             nn.ReLU()
@@ -101,7 +101,8 @@ class PolicyAgent(object):
         #  Notice that you should use p_net for *inference* only.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        actions_proba = torch.softmax(self.p_net(self.curr_state), 0)
+        with torch.no_grad():
+            actions_proba = torch.softmax(self.p_net(self.curr_state), 0)
         # ========================
         
 
@@ -135,9 +136,10 @@ class PolicyAgent(object):
         next_state = torch.tensor(next_state, device=self.device)
         # accumalte reward of the entire episode
         self.curr_episode_reward += reward
-        # Save cur state
+        # Save cur state & update cur->next
+        cur_state = self.curr_state
         self.curr_state = next_state
-        experience = Experience(next_state, action, reward, is_done)
+        experience = Experience(cur_state, action, reward, is_done)
         # ========================
         if is_done:
             self.reset()
@@ -167,12 +169,11 @@ class PolicyAgent(object):
             # ========================
             episode_done = False
             tmpAgent = cls(env, p_net, device)
-            with torch.no_grad():
-                while not episode_done:
-                    exp = tmpAgent.step()
-                    episode_done = exp.is_done
-                    reward += exp.reward
-                    n_steps += 1
+            while not episode_done:
+                exp = tmpAgent.step()
+                episode_done = exp.is_done
+                reward += exp.reward
+                n_steps += 1
             # ========================
         return env, n_steps, reward
 

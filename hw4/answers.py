@@ -12,8 +12,8 @@ math (delimited with $$).
 
 def part1_pg_hyperparams():
     hp = dict(batch_size=16,
-              gamma=0.95,
-              beta=0.2,
+              gamma=0.99,
+              beta=0.5,
               learn_rate=1e-3,
               eps=1e-8,
               )
@@ -27,7 +27,7 @@ def part1_pg_hyperparams():
 
 def part1_aac_hyperparams():
     hp = dict(batch_size=16,
-              gamma=0.95,
+              gamma=0.99,
               beta=0.5,
               delta=1.0,
               learn_rate=1e-3,
@@ -58,11 +58,14 @@ $v_{\pi}(s)$ is defined as average over the first action according to the policy
 
 part1_q3 = r"""
 1)
-There were no significant chages between the graphes on the first experiment. For the loss_p all managed to get to zero loss after some time. To the vpg and epg it took longer so we may suspect the the baseline had something to do with it. bpg and cpg(both using baseline) managed to get to same baseline loss. bpg had some temporary divergence. This affected his mean reward but he managed to recover and got reward similar to the others.
-The loss_e graph is the same. epg and cpg managed to minimize the loss to low values of -0.145~. This is wath we want regarding the exploration exploitation theorm. We don't want our agent to be too sure of his actions so he may try some new ones.
-Finally accounting for the mean_reward graph. all got prety much the same outcome. The ratio of convergence was also similar(besides the bpg because of the temporary divergence).
+There was a huge difference between trainig graphes. It seems that using the baseline affects the training significantly, this is probably due to the decrease in the variance as explained in the notebook. bpg and cpg(both using baseline) managed to get to same baseline loss. cpg had some temporary divergence. This affected his mean reward but he managed to recover and got reward similar to the bpg. This has may caused due to the entropy loss since minimizing max-entropy-loss means we want our agent try to explore more and not always go on the safe side.
+The loss_e graph shows how and cpg is applying the 'exploration' since there is an entropy loss throughout the process. Since epg didn't learn anything, he managed to get the entropy loss to zero which means he failed(zero loss always means something is wrong).
+Finally accounting for the mean_reward graph. epg and vpg did bad. We duduce this is due to high variance in the training process. bpg and cpg did alot better! they managed to get rewards over 100. Still it seems that both of them were somehow 'unstable' we can blame the baseline chosen. b(the average) is some constatnt. It is much better to 'learn' the appropriate offset as seen with the aac...
 
 2)
-We had great difficulty training the aac. It seems that gamma and betta affect him great deal. We think it may stuck on some local minima of 'hovering over' the landing zone. This prevents him from getting the big reward of 'landing' which is significantly bigger than the other rewards in the game. The ways we tried to overcome this is by a) increasing gamma but it seems it had hard time accepting gammas bigger than 0.95. And b) by increasing betta meaning we may try different actions instead of maintaining 'hovering' mode.
-Comparing to the other graphes, the loss (loss_p) seems to converge much fatster when using the aac framework. it seems that is also learns to achieve greater rewards much faster then other methods(see the slope of the 'mean_reward' graph). Still we can't explain why it does not doin much better when considering the total reward. A possible explanation is the 'shared' optimization meaning we should optimize the actor and the critic with different optimizers each configured seperatly. 
+It seems that in order to train the aac with gamma=0.99 so the agent will have the motivation to do the landing we had to decrease the size of the model in half.
+Comparing aac to cpg:
+loss_p: aac managed to get the same loss as the cpg but it took him longer. Amore 'gentle' slope
+loss_e: aac had largaer loss throughout the entire process. Here we can see how much the acc graph is smoother w.r.t the cpg one. This may has to do with the advantage function. Leading us to a more stabel learning.
+mean_reward: This is the grand victory of the advantage function. we can clearly see how though the cpg achieves greater reward faster the aac the aac has significantly smoother graph. This we predict will lead us to greater results in a long-term trainig. As predicted the aac manged to achieve mean reward of 160!
 """

@@ -27,18 +27,18 @@ class AACPolicyNet(nn.Module):
 #         self.action_layer = nn.Linear(128, out_actions)
 #         self.value_layer = nn.Linear(128, 1)
         self.action_layer = nn.Sequential(
-            nn.Linear(in_features, 512),
+            nn.Linear(in_features, 128),
             nn.ReLU(),
-            nn.Linear(512, 256),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(256, out_actions),
+            nn.Linear(64, out_actions),
         )
         self.value_layer = nn.Sequential(
-            nn.Linear(in_features, 512),
+            nn.Linear(in_features, 128),
             nn.ReLU(),
-            nn.Linear(512, 256),
+            nn.Linear(128, 64),
             nn.ReLU(),
-            nn.Linear(256, 1),
+            nn.Linear(64, 1),
         )
         # ========================
 
@@ -84,8 +84,9 @@ class AACPolicyAgent(PolicyAgent):
         # TODO: Generate the distribution as described above.
         # ====== YOUR CODE: ======
         #raise NotImplementedError()
-        action_scores, _ = self.p_net(self.curr_state)
-        actions_proba = torch.softmax(action_scores, 0)
+        with torch.no_grad():
+            action_scores, _ = self.p_net(self.curr_state)
+            actions_proba = torch.softmax(action_scores, 0)
         # ========================
         return actions_proba
 
